@@ -10,8 +10,10 @@ import { CreateVideoModal } from './components/CreateVideoModal';
 import { LessonBinderModal } from './components/LessonBinderModal';
 import { RemixModal } from './components/RemixModal';
 import { AboutModal } from './components/AboutModal';
+import { useAuth } from './auth/AuthContext';
 
 export const App: React.FC = () => {
+  const { user, logout, can } = useAuth();
   const [videos, setVideos] = useState<TeachTokVideo[]>(INITIAL_VIDEOS);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -118,7 +120,7 @@ export const App: React.FC = () => {
   };
 
   const handleAddComment = (comment: TeacherComment) => {
-    if (!activeCommentsVideo) return;
+    if (!activeCommentsVideo || !can('comment:create')) return;
     setVideos((prev) =>
       prev.map((v) => {
         if (v.id === activeCommentsVideo.id) {
@@ -137,6 +139,7 @@ export const App: React.FC = () => {
   };
 
   const handlePublishNewVideo = (newVideo: TeachTokVideo) => {
+    if (!can('video:create')) return;
     setVideos((prev) => [newVideo, ...prev]);
     setCurrentIndex(0);
   };
@@ -167,7 +170,11 @@ export const App: React.FC = () => {
         onSelectGrade={(gr) => { setSelectedGrade(gr); setCurrentIndex(0); }}
         savedCount={savedVideoIds.size + savedNotes.length}
         onOpenBinder={() => setIsBinderOpen(true)}
-        onOpenCreate={() => setIsCreateOpen(true)}
+        onOpenCreate={() => { if (can('video:create')) setIsCreateOpen(true); }}
+        userName={user?.displayName}
+        userRole={user?.role}
+        canCreate={can('video:create')}
+        onLogout={logout}
         onOpenAI={() => {
           const current = filteredVideos[safeIndex] || videos[0];
           setActiveAIVideo(current);
@@ -211,6 +218,7 @@ export const App: React.FC = () => {
           isOpen={!!activeCommentsVideo}
           onClose={() => setActiveCommentsVideo(null)}
           onAddComment={handleAddComment}
+          canComment={can('comment:create')}
         />
       )}
 
@@ -228,11 +236,11 @@ export const App: React.FC = () => {
           video={activeRemixVideo}
           isOpen={!!activeRemixVideo}
           onClose={() => setActiveRemixVideo(null)}
-          onRecordRemix={() => setIsCreateOpen(true)}
+          onRecordRemix={() => { if (can('video:create')) setIsCreateOpen(true); }}
         />
       )}
 
-      {isCreateOpen && (
+      {isCreateOpen && can('video:create') && (
         <CreateVideoModal
           isOpen={isCreateOpen}
           onClose={() => setIsCreateOpen(false)}

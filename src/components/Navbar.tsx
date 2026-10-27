@@ -1,6 +1,6 @@
 import React from 'react';
 import { SubjectFilter, GradeBand } from '../types';
-import { Sparkles, Bookmark, Plus, Search, BookOpen, Volume2, VolumeX, Info, Flame, GraduationCap } from 'lucide-react';
+import { Sparkles, Bookmark, Plus, Search, BookOpen, Volume2, VolumeX, Info, Flame, GraduationCap, LogOut } from 'lucide-react';
 
 interface NavbarProps {
   searchQuery: string;
@@ -16,6 +16,10 @@ interface NavbarProps {
   onOpenAbout: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  userName?: string;
+  userRole?: string;
+  canCreate?: boolean;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -32,6 +36,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAbout,
   isMuted,
   onToggleMute,
+  userName,
+  userRole,
+  canCreate = true,
+  onLogout,
 }) => {
   const subjects: { id: SubjectFilter; label: string }[] = [
     { id: 'all', label: '🔥 All Concepts' },
@@ -108,8 +116,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Share Teaching Strategy */}
           <button
             onClick={onOpenCreate}
-            className="flex items-center gap-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl transition shadow-lg shadow-indigo-600/25"
-            title="Share a Teaching Strategy"
+            disabled={!canCreate}
+            className="flex items-center gap-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3.5 py-2 rounded-xl transition shadow-lg shadow-indigo-600/25"
+            title={canCreate ? 'Share a Teaching Strategy' : 'You do not have permission to create videos'}
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Demonstrate Concept</span>
@@ -123,6 +132,29 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Info className="w-4 h-4" />
           </button>
+
+          {userName && (
+            <div
+              className="hidden lg:flex items-center gap-1.5 text-xs bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-2 rounded-xl"
+              title={`Signed in as ${userName}`}
+            >
+              <span className="font-semibold text-white max-w-[8rem] truncate">{userName}</span>
+              {userRole && (
+                <span className="text-[10px] uppercase font-mono text-indigo-400">{userRole}</span>
+              )}
+            </div>
+          )}
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
