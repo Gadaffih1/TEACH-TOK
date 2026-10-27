@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TeachTokVideo, SubjectFilter, GradeBand, VisualStyle } from '../types';
+import { useAuth } from '../auth/AuthContext';
 import { X, Upload, Video, Sparkles, Check, Plus, FileText } from 'lucide-react';
 
 interface CreateVideoModalProps {
@@ -13,6 +14,7 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
   onClose,
   onPublish,
 }) => {
+  const { user } = useAuth();
   if (!isOpen) return null;
 
   const [title, setTitle] = useState('');
@@ -28,7 +30,7 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !concept.trim()) return;
+    if (!user || !title.trim() || !concept.trim()) return;
 
     const newVideo: TeachTokVideo = {
       id: `vid-teacher-${Date.now()}`,
@@ -36,16 +38,19 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
       concept: concept.trim(),
       subject,
       gradeBand,
+      teachingStrategy: 'Direct Instruction',
       standardCode: standardCode.trim() || 'TEACHER-CUSTOM-STANDARD',
       pedagogyTag: pedagogyTag.trim() || 'Classroom Tested',
       summary: `${concept}: ${keyAnalogy.slice(0, 120)}...`,
       teacher: {
-        id: 't-current-user',
-        name: 'You (Educator)',
-        handle: '@EducatorYou',
-        avatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
-        role: `${gradeBand} Specialist`,
-        school: 'Innovation Academy',
+        id: user.id,
+        name: user.displayName,
+        handle: user.handle,
+        avatar:
+          user.avatarUrl ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=4f46e5&color=fff`,
+        role: user.role === 'admin' ? 'Admin' : `${gradeBand} Specialist`,
+        school: user.school || 'Independent Educator',
         subjects: [subject],
         gradeBand,
         badge: 'Mentor Teacher',

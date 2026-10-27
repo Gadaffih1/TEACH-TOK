@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TeachTokVideo, TeacherComment } from '../types';
+import { useAuth } from '../auth/AuthContext';
 import { X, MessageSquare, ThumbsUp, Star, Award, Send } from 'lucide-react';
 
 interface CommentsModalProps {
@@ -7,6 +8,7 @@ interface CommentsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddComment: (comment: TeacherComment) => void;
+  canComment?: boolean;
 }
 
 export const CommentsModal: React.FC<CommentsModalProps> = ({
@@ -14,7 +16,9 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
   isOpen,
   onClose,
   onAddComment,
+  canComment = true,
 }) => {
+  const { user } = useAuth();
   if (!isOpen) return null;
 
   const [commentText, setCommentText] = useState('');
@@ -23,18 +27,20 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!canComment || !user || !commentText.trim()) return;
 
     const newComment: TeacherComment = {
       id: `comment-${Date.now()}`,
-      authorName: 'You (Teacher)',
-      authorRole: roleTag,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      authorName: user.displayName,
+      authorRole: user.role === 'admin' ? 'Admin' : roleTag,
+      avatar:
+        user.avatarUrl ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=4f46e5&color=fff`,
       text: commentText.trim(),
       timestamp: 'Just now',
       classroomSuccessRating: starRating,
       upvotes: 1,
-      verifiedTeacher: true,
+      verifiedTeacher: user.role === 'teacher' || user.role === 'admin',
     };
 
     onAddComment(newComment);
@@ -154,14 +160,15 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="How did this lesson work with your students? Any modifications?"
+              placeholder={canComment ? 'How did this lesson work with your students? Any modifications?' : 'You do not have permission to comment'}
+              disabled={!canComment}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-indigo-500 transition"
             />
             <button
               type="submit"
-              disabled={!commentText.trim()}
+              disabled={!canComment || !commentText.trim()}
               className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-3.5 py-2 rounded-xl transition flex items-center justify-center shrink-0"
             >
               <Send className="w-4 h-4" />
