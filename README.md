@@ -24,3 +24,10 @@ collections) need the admin token; start the server with `ADMIN_TOKEN=... npm st
 ## Persistence
 Data (including hashed auth tokens) is saved to a JSON file after every change and
 reloaded on start. Default `data.json` in the repo root; override with `DATA_FILE=/path`.
+
+## Video upload
+`POST /api/uploads` (auth required) with the raw video as the body and `Content-Type`
+`video/mp4`, `video/webm` or `video/quicktime` (max 200 MB) returns `{ url }`. Pass that
+`url` as `videoUrl` to `POST /api/videos`. Files are stored in `uploads/` (override with
+`UPLOAD_DIR`) and streamed from `/uploads/<name>` with range support. No transcoding or
+virus scanning is done.

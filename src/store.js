@@ -66,6 +66,7 @@ function createStore({ file } = {}) {
     uploadVideo(b) {
       req(b, ['teacherId', 'title', 'concept', 'videoUrl']);
       need(db.teachers, b.teacherId, 'teacher');
+      if (!/^(\/uploads\/[a-f0-9]{32}\.(mp4|webm|mov)|https?:\/\/.+)$/i.test(String(b.videoUrl))) throw bad('videoUrl must be an uploaded video or an http(s) URL');
       const v = { id: id(), teacherId: b.teacherId, title: b.title, concept: b.concept, subject: b.subject || '',
         caption: b.caption || '', videoUrl: b.videoUrl, comments: [], status: 'published', createdAt: now() };
       db.videos.set(v.id, v);

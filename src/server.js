@@ -6,7 +6,11 @@ const crypto = require('crypto');
 const { createStore } = require('./store');
 const ai = require('./ai');
 
-function createServer(store = createStore(), { adminToken = process.env.ADMIN_TOKEN } = {}) {
+const VIDEO_TYPES = { 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov' };
+const MIME = Object.fromEntries(Object.entries(VIDEO_TYPES).map(([m, e]) => [e, m]));
+const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
+
+function createServer(store = createStore(), { adminToken = process.env.ADMIN_TOKEN, uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads'), maxVideoBytes = MAX_VIDEO_BYTES } = {}) {
   const fail = (status, message) => Object.assign(new Error(message), { status });
   const same = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && crypto.timingSafeEqual(x, y); };
   const isAdmin = (h) => !!adminToken && same(bearer(h), adminToken);
@@ -50,6 +54,45 @@ function createServer(store = createStore(), { adminToken = process.env.ADMIN_TO
   return http.createServer((rq, rs) => {
     const send = (code, data, type = 'application/json') => { rs.writeHead(code, { 'Content-Type': type }); rs.end(type === 'application/json' ? JSON.stringify(data) : data); };
     const url = new URL(rq.url, 'http://localhost');
+    const authed = () => store.teacherForToken((/^bearer /i.test(rq.headers.authorization || '') ? rq.headers.authorization.slice(7) : ''));
+
+    if (rq.method === 'POST' && url.pathname === '/api/uploads') {
+      if (!authed()) return send(401, { error: 'authentication required' });
+      const type = String(rq.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+      if (!VIDEO_TYPES[type]) return send(415, { error: 'unsupported type; use mp4, webm or quicktime' });
+      if (Number(rq.headers['content-length']) > maxVideoBytes) return send(413, { error: 'file too large' });
+      fs.mkdirSync(uploadDir, { recursive: true });
+      const name = crypto.randomBytes(16).toString('hex') + VIDEO_TYPES[type];
+      const dest = path.join(uploadDir, name);
+      const out = fs.createWriteStream(dest, { flags: 'wx', mode: 0o600 });
+      let size = 0, done = false;
+      const abort = (code, msg) => { if (done) return; done = true; out.destroy(); fs.rm(dest, { force: true }, () => {}); send(code, { error: msg }); };
+      rq.on('data', (c) => { size += c.length; if (size > maxVideoBytes) { rq.unpipe(out); abort(413, 'file too large'); rq.resume(); } });
+      rq.on('error', () => abort(400, 'upload failed'));
+      out.on('error', () => abort(500, 'upload failed'));
+      out.on('finish', () => { if (done) return; done = true; if (!size) { fs.rm(dest, { force: true }, () => {}); return send(400, { error: 'empty upload' }); } send(201, { url: '/uploads/' + name, bytes: size }); });
+      return rq.pipe(out);
+    }
+    if (rq.method === 'GET' && url.pathname.startsWith('/uploads/')) {
+      const name = url.pathname.slice('/uploads/'.length);
+      if (!/^[a-f0-9]{32}\.(mp4|webm|mov)$/.test(name)) return send(404, { error: 'not found' });
+      const file = path.join(uploadDir, name);
+      fs.stat(file, (err, st) => {
+        if (err) return send(404, { error: 'not found' });
+        const headers = { 'Content-Type': MIME[path.extname(name)], 'Accept-Ranges': 'bytes', 'X-Content-Type-Options': 'nosniff' };
+        const m = /^bytes=(\d*)-(\d*)$/.exec(rq.headers.range || '');
+        let start = 0, end = st.size - 1, code = 200;
+        if (m && (m[1] || m[2])) {
+          if (m[1]) { start = +m[1]; if (m[2]) end = Math.min(+m[2], end); } else { start = Math.max(0, st.size - +m[2]); }
+          if (start > end || start >= st.size) { rs.writeHead(416, { 'Content-Range': `bytes */${st.size}` }); return rs.end(); }
+          code = 206; headers['Content-Range'] = `bytes ${start}-${end}/${st.size}`;
+        }
+        headers['Content-Length'] = end - start + 1;
+        rs.writeHead(code, headers);
+        fs.createReadStream(file, { start, end }).pipe(rs);
+      });
+      return;
+    }
     if (!url.pathname.startsWith('/api/')) {
       if (rq.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) return send(200, fs.readFileSync(path.join(publicDir, 'index.html')), 'text/html');
       return send(404, { error: 'not found' });

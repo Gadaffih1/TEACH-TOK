@@ -5,7 +5,7 @@ const { createServer } = require('../src/server');
 
 const ADMIN = 'admin-secret';
 async function withServer(fn) {
-  const s = createServer(undefined, { adminToken: ADMIN });
+  const s = createServer(undefined, { adminToken: ADMIN, uploadDir: require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'up-')), maxVideoBytes: 1000 });
   await new Promise((r) => s.listen(0, r));
   const base = `http://127.0.0.1:${s.address().port}`;
   const call = async (m, p, b, token) => {
@@ -13,6 +13,7 @@ async function withServer(fn) {
     const r = await fetch(base + p, { method: m, headers, body: b ? JSON.stringify(b) : undefined });
     return { status: r.status, body: await r.json() };
   };
+  call.base = base;
   try { await fn(call); } finally { s.close(); }
 }
 
@@ -35,12 +36,33 @@ test('video feed, engagement, follow, analytics', () => withServer(async (call) 
 
 test('authentication and admin permissions', () => withServer(async (call) => {
   const a = (await call('POST', '/api/teachers', { name: 'A', school: 'S' })).body;
-  assert.strictEqual((await call('POST', '/api/videos', { title: 't', concept: 'c', videoUrl: 'u' })).status, 401);
-  assert.strictEqual((await call('POST', '/api/videos', { title: 't', concept: 'c', videoUrl: 'u' }, 'bad')).status, 401);
+  assert.strictEqual((await call('POST', '/api/videos', { title: 't', concept: 'c', videoUrl: 'http://x/v.mp4' })).status, 401);
+  assert.strictEqual((await call('POST', '/api/videos', { title: 't', concept: 'c', videoUrl: 'http://x/v.mp4' }, 'bad')).status, 401);
   assert.strictEqual((await call('POST', `/api/teachers/${a.id}/verify`, {}, a.token)).status, 403);
   assert.strictEqual((await call('GET', '/api/admin/reports', undefined, a.token)).status, 403);
   assert.strictEqual((await call('GET', '/api/analytics')).status, 403);
   assert.strictEqual((await call('POST', `/api/teachers/${a.id}/verify`, {}, ADMIN)).body.verified, true);
+}));
+
+test('video upload and streaming', () => withServer(async (call) => {
+  const a = (await call('POST', '/api/teachers', { name: 'A', school: 'S' })).body;
+  const auth = { Authorization: ['Bearer', a.token].join(' ') };
+  const post = (body, type = 'video/mp4', h = auth) => fetch(call.base + '/api/uploads', { method: 'POST', headers: { ...h, 'Content-Type': type }, body });
+  assert.strictEqual((await post(Buffer.alloc(10), 'video/mp4', {})).status, 401);
+  assert.strictEqual((await post(Buffer.alloc(10), 'text/html')).status, 415);
+  assert.strictEqual((await post(Buffer.alloc(5000))).status, 413);
+  const up = await post(Buffer.from('0123456789'));
+  assert.strictEqual(up.status, 201);
+  const { url } = await up.json();
+  const full = await fetch(call.base + url);
+  assert.strictEqual(full.headers.get('content-type'), 'video/mp4');
+  assert.strictEqual(await full.text(), '0123456789');
+  const part = await fetch(call.base + url, { headers: { Range: 'bytes=2-4' } });
+  assert.strictEqual(part.status, 206);
+  assert.strictEqual(await part.text(), '234');
+  assert.strictEqual((await fetch(call.base + '/uploads/../data.json')).status, 404);
+  assert.strictEqual((await call('POST', '/api/videos', { title: 't', concept: 'c', videoUrl: url }, a.token)).status, 201);
+  assert.strictEqual((await call('POST', '/api/videos', { title: 't', concept: 'c', videoUrl: 'javascript:alert(1)' }, a.token)).status, 400);
 }));
 
 test('AI studio generates every format', () => withServer(async (call) => {
@@ -83,7 +105,7 @@ test('data and tokens persist across restarts', async () => {
   };
   let { s, call } = await start();
   const a = (await call('POST', '/api/teachers', { name: 'A', school: 'S' })).body;
-  const v = (await call('POST', '/api/videos', { title: 'T', concept: 'c', videoUrl: 'u' }, a.token)).body;
+  const v = (await call('POST', '/api/videos', { title: 'T', concept: 'c', videoUrl: 'http://x/v.mp4' }, a.token)).body;
   await call('POST', `/api/videos/${v.id}/like`, {}, a.token);
   s.close();
   ({ s, call } = await start());
