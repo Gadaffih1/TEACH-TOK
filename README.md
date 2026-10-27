@@ -31,3 +31,10 @@ reloaded on start. Default `data.json` in the repo root; override with `DATA_FIL
 `url` as `videoUrl` to `POST /api/videos`. Files are stored in `uploads/` (override with
 `UPLOAD_DIR`) and streamed from `/uploads/<name>` with range support. No transcoding or
 virus scanning is done.
+
+## Document extraction
+`POST /api/ai/extract` with `{ filename, contentBase64 }` supports `.docx`, `.pptx` and
+`.pdf` (no dependencies), plus images via OCR when the `tesseract` CLI is installed
+(`TESSERACT_BIN` to override; otherwise 501). Plain `.txt/.md/.csv` can still use `content`.
+PDF extraction handles text-based PDFs only; scanned or custom-font PDFs return 422.
+Legacy `.doc`/`.ppt` are not supported. Feed the returned `text` to `/api/ai/generate`.

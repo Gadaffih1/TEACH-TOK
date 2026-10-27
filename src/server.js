@@ -41,7 +41,7 @@ function createServer(store = createStore(), { adminToken = process.env.ADMIN_TO
   on('GET', '/api/collections', () => [200, store.collections()]);
   on('POST', '/api/collections', (c) => { admin(c); return [201, store.createCollection(c.body)]; });
 
-  on('POST', '/api/ai/extract', ({ body }) => [200, ai.extract(body)]);
+  on('POST', '/api/ai/extract', async ({ body }) => [200, await ai.extract(body)]);
   on('POST', '/api/ai/generate', ({ body }) => [200, ai.generate(body.format, body)]);
   on('GET', '/api/ai/formats', () => [200, ai.FORMATS]);
 
@@ -97,15 +97,16 @@ function createServer(store = createStore(), { adminToken = process.env.ADMIN_TO
       if (rq.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) return send(200, fs.readFileSync(path.join(publicDir, 'index.html')), 'text/html');
       return send(404, { error: 'not found' });
     }
-    let raw = '';
-    rq.on('data', (c) => { raw += c; if (raw.length > 5e6) rq.destroy(); });
-    rq.on('end', () => {
+    let raw = '', tooBig = false;
+    rq.on('data', (c) => { if (tooBig) return; raw += c; if (raw.length > 15e6) { tooBig = true; raw = ''; } });
+    rq.on('end', async () => {
+      if (tooBig) return send(413, { error: 'request too large' });
       try {
         const route = routes.map((r) => ({ r, m: r.method === rq.method && r.re.exec(url.pathname) })).find((x) => x.m);
         if (!route) return send(404, { error: 'not found' });
         let body = {};
         if (raw) { try { body = JSON.parse(raw); } catch { return send(400, { error: 'invalid JSON' }); } }
-        const [code, data] = route.r.fn({ p: route.m.groups || {}, q: url.searchParams, body, auth: rq.headers.authorization || '' });
+        const [code, data] = await route.r.fn({ p: route.m.groups || {}, q: url.searchParams, body, auth: rq.headers.authorization || '' });
         send(code, data);
       } catch (e) { send(e.status || 500, { error: e.status ? e.message : 'internal error' }); }
     });

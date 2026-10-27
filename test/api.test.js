@@ -65,6 +65,43 @@ test('video upload and streaming', () => withServer(async (call) => {
   assert.strictEqual((await call('POST', '/api/videos', { title: 't', concept: 'c', videoUrl: 'javascript:alert(1)' }, a.token)).status, 400);
 }));
 
+function makeZip(entries) {
+  const zlib = require('zlib');
+  const local = [], central = [];
+  let off = 0;
+  for (const [name, text] of Object.entries(entries)) {
+    const n = Buffer.from(name), d = zlib.deflateRawSync(Buffer.from(text));
+    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(8, 8); lh.writeUInt32LE(d.length, 18); lh.writeUInt32LE(text.length, 22); lh.writeUInt16LE(n.length, 26);
+    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(8, 10); ch.writeUInt32LE(d.length, 20); ch.writeUInt32LE(text.length, 24); ch.writeUInt16LE(n.length, 28); ch.writeUInt32LE(off, 42);
+    local.push(lh, n, d); central.push(ch, n); off += 30 + n.length + d.length;
+  }
+  const cd = Buffer.concat(central);
+  const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(central.length / 2, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(off, 16);
+  return Buffer.concat([...local, cd, end]);
+}
+
+test('document extraction: docx, pptx, pdf, errors', () => withServer(async (call) => {
+  const ex = (filename, buf) => call('POST', '/api/ai/extract', { filename, contentBase64: buf.toString('base64') });
+  const docx = makeZip({ 'word/document.xml': '<w:document><w:p><w:r><w:t>Fractions &amp; decimals</w:t></w:r></w:p><w:p><w:r><w:t xml:space="preserve">Second para</w:t></w:r></w:p></w:document>' });
+  let r = await ex('notes.docx', docx);
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.body.text, 'Fractions & decimals\nSecond para');
+  const pptx = makeZip({ 'ppt/slides/slide2.xml': '<p><a:p><a:r><a:t>Two</a:t></a:r></a:p></p>', 'ppt/slides/slide1.xml': '<p><a:p><a:r><a:t>One</a:t></a:r></a:p></p>' });
+  r = await ex('deck.pptx', pptx);
+  assert.strictEqual(r.body.text, 'Slide 1\nOne\n\nSlide 2\nTwo');
+  const zlib = require('zlib');
+  const content = 'BT /F1 12 Tf (Photosynthesis \\(light\\)) Tj [(Chloro) -20 (phyll)] TJ ET';
+  const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n1 0 obj\n<< /Filter /FlateDecode >>\nstream\n'), zlib.deflateSync(Buffer.from(content)), Buffer.from('\nendstream\nendobj\n%%EOF')]);
+  r = await ex('a.pdf', pdf);
+  assert.strictEqual(r.body.text, 'Photosynthesis (light)Chlorophyll');
+  assert.strictEqual((await ex('bad.docx', Buffer.from('nope'))).status, 400);
+  assert.strictEqual((await ex('x.pdf', Buffer.from('%PDF-1.4 empty'))).status, 422);
+  assert.strictEqual((await ex('old.doc', Buffer.from('x'))).status, 415);
+  assert.strictEqual((await call('POST', '/api/ai/extract', { filename: 'a.pdf', content: 'x' })).status, 400);
+  const img = await ex('p.png', Buffer.from('x'));
+  assert.ok([501, 422].includes(img.status));
+}));
+
 test('AI studio generates every format', () => withServer(async (call) => {
   const text = 'Photosynthesis converts light into chemical energy. Plants absorb sunlight using chlorophyll. Chlorophyll sits inside chloroplasts. Glucose is produced.';
   const formats = (await call('GET', '/api/ai/formats')).body;
@@ -73,7 +110,7 @@ test('AI studio generates every format', () => withServer(async (call) => {
     assert.strictEqual(r.status, 200, format);
   }
   assert.strictEqual((await call('POST', '/api/ai/generate', { format: 'nope', text })).status, 400);
-  assert.strictEqual((await call('POST', '/api/ai/extract', { filename: 'a.pdf' })).status, 415);
+  assert.strictEqual((await call('POST', '/api/ai/extract', { filename: 'a.pdf' })).status, 400);
 }));
 
 test('resources, collaboration, moderation', () => withServer(async (call) => {

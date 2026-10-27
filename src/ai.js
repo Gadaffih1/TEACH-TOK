@@ -38,11 +38,6 @@ function generate(format, { topic, text }) {
   }
 }
 
-// Extraction supports plain-text style uploads; binary formats need a parser service.
-function extract({ filename = '', content = '' }) {
-  const ext = filename.split('.').pop().toLowerCase();
-  if (['txt', 'md', 'csv', ''].includes(ext)) return { filename, text: String(content) };
-  throw Object.assign(new Error(`.${ext} extraction requires a document parser; send extracted text instead`), { status: 415 });
-}
+const { extractFile: extract } = require('./extract');
 
 module.exports = { generate, extract, FORMATS };
