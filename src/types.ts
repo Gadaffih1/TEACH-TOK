@@ -61,12 +61,15 @@ export type VisualStyle =
   | 'chemical_bonds_visualizer'
   | 'default';
 
+export type TeachingStrategy = 'all' | 'Direct Instruction' | 'Inquiry-Based' | 'Gamification' | 'Peer Review';
+
 export interface TeachTokVideo {
   id: string;
   title: string;
   concept: string;
   subject: 'Math' | 'Science' | 'English & ELA' | 'History & Social Studies' | 'Arts' | 'Classroom Management';
   gradeBand: GradeBand;
+  teachingStrategy: 'Direct Instruction' | 'Inquiry-Based' | 'Gamification' | 'Peer Review';
   standardCode: string; // e.g. CCSS.MATH.CONTENT.5.NF.B.4
   pedagogyTag: string; // e.g. "CRA Concrete First", "Zombie Test Analogy", "Kinesthetic Modeling"
   summary: string;
@@ -93,3 +96,4 @@ export interface TeachTokVideo {
 }
 
 export type SubjectFilter = 'all' | 'Math' | 'Science' | 'English & ELA' | 'History & Social Studies' | 'Classroom Management';
+
