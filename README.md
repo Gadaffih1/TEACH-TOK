@@ -20,3 +20,7 @@ replaced by an LLM provider.
 `Bearer` scheme. Actions like upload, like, comment, bookmark, follow and adding resources
 act as the token's teacher. Admin endpoints (verify, reports, takedown, analytics,
 collections) need the admin token; start the server with `ADMIN_TOKEN=... npm start`.
+
+## Persistence
+Data (including hashed auth tokens) is saved to a JSON file after every change and
+reloaded on start. Default `data.json` in the repo root; override with `DATA_FILE=/path`.

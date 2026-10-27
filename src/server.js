@@ -7,24 +7,23 @@ const { createStore } = require('./store');
 const ai = require('./ai');
 
 function createServer(store = createStore(), { adminToken = process.env.ADMIN_TOKEN } = {}) {
-  const tokens = new Map(); // bearer token -> teacherId
   const fail = (status, message) => Object.assign(new Error(message), { status });
   const same = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && crypto.timingSafeEqual(x, y); };
   const isAdmin = (h) => !!adminToken && same(bearer(h), adminToken);
   const bearer = (h) => (/^bearer /i.test(h) ? h.slice(7) : '');
-  const me = ({ auth }) => { const t = tokens.get(bearer(auth)); if (!t) throw fail(401, 'authentication required'); return t; };
+  const me = ({ auth }) => { const t = store.teacherForToken(bearer(auth)); if (!t) throw fail(401, 'authentication required'); return t; };
   const admin = ({ auth }) => { if (!isAdmin(auth)) throw fail(403, 'admin only'); };
   const routes = [];
   const on = (method, pattern, fn) => routes.push({ method, re: new RegExp('^' + pattern.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn });
 
-  on('POST', '/api/teachers', ({ body }) => { const t = store.createTeacher(body); const token = crypto.randomBytes(24).toString('hex'); tokens.set(token, t.id); return [201, { ...t, token }]; });
+  on('POST', '/api/teachers', ({ body }) => { const t = store.createTeacher(body); return [201, { ...t, token: store.issueToken(t.id) }]; });
   on('GET', '/api/teachers/:id', ({ p }) => [200, store.getTeacher(p.id)]);
   on('POST', '/api/teachers/:id/verify', (c) => { admin(c); return [200, store.verifyTeacher(c.p.id)]; });
   on('POST', '/api/teachers/:id/follow', (c) => [200, store.follow(me(c), c.p.id)]);
   on('GET', '/api/bookmarks', (c) => [200, store.bookmarks(me(c))]);
 
   on('POST', '/api/videos', (c) => [201, store.uploadVideo({ ...c.body, teacherId: me(c) })]);
-  on('GET', '/api/feed', (c) => [200, store.feed({ teacherId: tokens.get(bearer(c.auth)) || '', concept: c.q.get('concept') })]);
+  on('GET', '/api/feed', (c) => [200, store.feed({ teacherId: store.teacherForToken(bearer(c.auth)) || '', concept: c.q.get('concept') })]);
   on('POST', '/api/videos/:id/view', ({ p }) => [200, store.view(p.id)]);
   on('POST', '/api/videos/:id/like', (c) => [200, store.like(c.p.id, me(c))]);
   on('DELETE', '/api/videos/:id/like', (c) => [200, store.unlike(c.p.id, me(c))]);
@@ -73,6 +72,6 @@ function createServer(store = createStore(), { adminToken = process.env.ADMIN_TO
 if (require.main === module) {
   const port = process.env.PORT || 3000;
   if (!process.env.ADMIN_TOKEN) console.warn('ADMIN_TOKEN not set: admin endpoints are disabled');
-  createServer().listen(port, () => console.log(`Teach-Tok listening on http://localhost:${port}`));
+  createServer(createStore({ file: process.env.DATA_FILE || path.join(__dirname, '..', 'data.json') })).listen(port, () => console.log(`Teach-Tok listening on http://localhost:${port}`));
 }
 module.exports = { createServer };

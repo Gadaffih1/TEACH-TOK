@@ -1,15 +1,35 @@
 'use strict';
 // In-memory data store and domain logic for all Teach-Tok modules.
 const crypto = require('crypto');
+const fs = require('fs');
 const id = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 
-function createStore() {
+const sha = (t) => crypto.createHash('sha256').update(String(t)).digest('hex');
+
+// Maps/Sets are serialised as arrays; `file` (optional) enables JSON persistence.
+function createStore({ file } = {}) {
   const db = {
+    tokens: new Map(),
     teachers: new Map(), videos: new Map(), resources: new Map(),
     collections: new Map(), reports: [], follows: new Set(), bookmarks: new Set(),
     likes: new Set(), views: new Map(), participation: new Map(),
   };
+  const save = () => {
+    if (!file) return;
+    const out = {};
+    for (const [k, v] of Object.entries(db)) out[k] = v instanceof Map ? { map: [...v] } : v instanceof Set ? { set: [...v] } : v;
+    const tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(out), { mode: 0o600 });
+    fs.renameSync(tmp, file);
+  };
+  if (file && fs.existsSync(file)) {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    for (const [k, v] of Object.entries(data)) {
+      if (!(k in db)) continue;
+      db[k] = Array.isArray(v) ? v : Array.isArray(v.map) ? new Map(v.map) : Array.isArray(v.set) ? new Set(v.set) : v;
+    }
+  }
   const need = (map, key, what) => {
     const v = map.get(key);
     if (!v) throw Object.assign(new Error(`${what} not found`), { status: 404 });
@@ -25,7 +45,7 @@ function createStore() {
   };
   const participate = (tid) => db.participation.set(tid, (db.participation.get(tid) || 0) + 1);
 
-  return {
+  const api = {
     // Teacher accounts
     createTeacher(b) {
       req(b, ['name', 'school']);
@@ -33,6 +53,13 @@ function createStore() {
       db.teachers.set(t.id, t);
       return t;
     },
+    issueToken(tid) {
+      need(db.teachers, tid, 'teacher');
+      const token = crypto.randomBytes(24).toString('hex');
+      db.tokens.set(sha(token), tid);
+      return token;
+    },
+    teacherForToken(token) { return db.tokens.get(sha(token)); },
     getTeacher(tid) { return { ...need(db.teachers, tid, 'teacher'), badges: badges(tid) }; },
     verifyTeacher(tid) { need(db.teachers, tid, 'teacher').verified = true; return db.teachers.get(tid); },
     // Video feed & upload studio
@@ -135,5 +162,11 @@ function createStore() {
       };
     },
   };
+  const readOnly = new Set(['getTeacher', 'teacherForToken', 'feed', 'videoStats', 'bookmarks', 'searchResources', 'collections', 'reports', 'analytics']);
+  for (const [name, fn] of Object.entries(api)) {
+    if (readOnly.has(name)) continue;
+    api[name] = (...args) => { const r = fn.apply(api, args); save(); return r; };
+  }
+  return api;
 }
 module.exports = { createStore };

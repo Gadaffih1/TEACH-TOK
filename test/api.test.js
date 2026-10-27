@@ -66,3 +66,32 @@ test('resources, collaboration, moderation', () => withServer(async (call) => {
   await call('POST', `/api/admin/reports/${rep.id}/takedown`, {}, ADMIN);
   assert.strictEqual((await call('GET', '/api/resources?q=algebra')).body.length, 0);
 }));
+
+test('data and tokens persist across restarts', async () => {
+  const os = require('os'), fs = require('fs'), path = require('path');
+  const { createStore } = require('../src/store');
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'tt-')), 'data.json');
+  const start = async () => {
+    const s = createServer(createStore({ file }), { adminToken: ADMIN });
+    await new Promise((r) => s.listen(0, r));
+    const base = `http://127.0.0.1:${s.address().port}`;
+    const call = async (m, p, b, t) => {
+      const r = await fetch(base + p, { method: m, headers: t ? { Authorization: ['Bearer', t].join(' ') } : {}, body: b ? JSON.stringify(b) : undefined });
+      return { status: r.status, body: await r.json() };
+    };
+    return { s, call };
+  };
+  let { s, call } = await start();
+  const a = (await call('POST', '/api/teachers', { name: 'A', school: 'S' })).body;
+  const v = (await call('POST', '/api/videos', { title: 'T', concept: 'c', videoUrl: 'u' }, a.token)).body;
+  await call('POST', `/api/videos/${v.id}/like`, {}, a.token);
+  s.close();
+  ({ s, call } = await start());
+  try {
+    const feed = (await call('GET', '/api/feed')).body;
+    assert.strictEqual(feed.length, 1);
+    assert.strictEqual(feed[0].stats.likes, 1);
+    assert.strictEqual((await call('POST', `/api/videos/${v.id}/bookmark`, {}, a.token)).status, 200);
+    assert.ok(!fs.readFileSync(file, 'utf8').includes(a.token), 'raw token must not be stored');
+  } finally { s.close(); }
+});
