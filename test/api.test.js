@@ -103,13 +103,16 @@ test('document extraction: docx, pptx, pdf, errors', () => withServer(async (cal
 }));
 
 test('AI studio generates every format', () => withServer(async (call) => {
+  const t = (await call('POST', '/api/teachers', { name: 'A', school: 'S' })).body.token;
+  assert.strictEqual((await call('POST', '/api/ai/generate', { format: 'quiz', text: 'x y' })).status, 401);
   const text = 'Photosynthesis converts light into chemical energy. Plants absorb sunlight using chlorophyll. Chlorophyll sits inside chloroplasts. Glucose is produced.';
   const formats = (await call('GET', '/api/ai/formats')).body;
   for (const format of formats) {
-    const r = await call('POST', '/api/ai/generate', { format, text });
+    const r = await call('POST', '/api/ai/generate', { format, text }, t);
     assert.strictEqual(r.status, 200, format);
+    assert.strictEqual(r.body.source, 'offline');
   }
-  assert.strictEqual((await call('POST', '/api/ai/generate', { format: 'nope', text })).status, 400);
+  assert.strictEqual((await call('POST', '/api/ai/generate', { format: 'nope', text }, t)).status, 400);
   assert.strictEqual((await call('POST', '/api/ai/extract', { filename: 'a.pdf' })).status, 400);
 }));
 
@@ -153,4 +156,33 @@ test('data and tokens persist across restarts', async () => {
     assert.strictEqual((await call('POST', `/api/videos/${v.id}/bookmark`, {}, a.token)).status, 200);
     assert.ok(!fs.readFileSync(file, 'utf8').includes(a.token), 'raw token must not be stored');
   } finally { s.close(); }
+});
+
+test('AI generation uses the LLM when configured and falls back on failure', async () => {
+  const http = require('http');
+  let mode = 'ok', seen;
+  const mock = http.createServer((rq, rs) => {
+    let b = ''; rq.on('data', (c) => (b += c)); rq.on('end', () => {
+      seen = { auth: rq.headers.authorization, body: JSON.parse(b) };
+      if (mode === 'err') { rs.writeHead(500); return rs.end('{}'); }
+      rs.writeHead(200, { 'Content-Type': 'application/json' });
+      rs.end(JSON.stringify({ choices: [{ message: { content: mode === 'bad' ? 'not json' : JSON.stringify({ title: 'LLM quiz', questions: [] }) } }] }));
+    });
+  });
+  await new Promise((r) => mock.listen(0, r));
+  const llm = { apiKey: 'k', baseUrl: `http://127.0.0.1:${mock.address().port}`, model: 'm' };
+  const { generate } = require('../src/ai');
+  try {
+    let r = await generate('quiz', { text: 'Cells divide. Mitosis happens.' }, { llm });
+    assert.strictEqual(r.source, 'llm');
+    assert.strictEqual(r.title, 'LLM quiz');
+    assert.strictEqual(seen.auth, ['Bearer', 'k'].join(' '));
+    assert.strictEqual(seen.body.model, 'm');
+    for (mode of ['err', 'bad']) {
+      r = await generate('quiz', { text: 'Cells divide. Mitosis happens.' }, { llm });
+      assert.strictEqual(r.source, 'offline');
+      assert.ok(r.questions.length > 0);
+    }
+    await assert.rejects(generate('quiz', { text: '' }, { llm }), { status: 400 });
+  } finally { mock.close(); }
 });

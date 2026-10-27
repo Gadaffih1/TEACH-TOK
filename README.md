@@ -38,3 +38,11 @@ virus scanning is done.
 (`TESSERACT_BIN` to override; otherwise 501). Plain `.txt/.md/.csv` can still use `content`.
 PDF extraction handles text-based PDFs only; scanned or custom-font PDFs return 422.
 Legacy `.doc`/`.ppt` are not supported. Feed the returned `text` to `/api/ai/generate`.
+
+## Real LLM for the AI Studio
+Set `LLM_API_KEY` (and optionally `LLM_BASE_URL`, default OpenAI; `LLM_MODEL`, default
+`gpt-4o-mini`) to use any OpenAI-compatible chat-completions API. `POST /api/ai/generate`
+now requires a teacher token; the response includes `source: "llm"` or `"offline"`.
+If the LLM call fails or returns invalid JSON, the built-in offline generator is used.
+Input is truncated to 20,000 characters. Output shape follows the model's JSON and is
+not strictly schema-validated.

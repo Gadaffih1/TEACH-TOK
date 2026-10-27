@@ -5,12 +5,13 @@ const path = require('path');
 const crypto = require('crypto');
 const { createStore } = require('./store');
 const ai = require('./ai');
+const { llmConfig } = require('./llm');
 
 const VIDEO_TYPES = { 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov' };
 const MIME = Object.fromEntries(Object.entries(VIDEO_TYPES).map(([m, e]) => [e, m]));
 const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
 
-function createServer(store = createStore(), { adminToken = process.env.ADMIN_TOKEN, uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads'), maxVideoBytes = MAX_VIDEO_BYTES } = {}) {
+function createServer(store = createStore(), { adminToken = process.env.ADMIN_TOKEN, uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads'), maxVideoBytes = MAX_VIDEO_BYTES, llm = llmConfig() } = {}) {
   const fail = (status, message) => Object.assign(new Error(message), { status });
   const same = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && crypto.timingSafeEqual(x, y); };
   const isAdmin = (h) => !!adminToken && same(bearer(h), adminToken);
@@ -42,7 +43,7 @@ function createServer(store = createStore(), { adminToken = process.env.ADMIN_TO
   on('POST', '/api/collections', (c) => { admin(c); return [201, store.createCollection(c.body)]; });
 
   on('POST', '/api/ai/extract', async ({ body }) => [200, await ai.extract(body)]);
-  on('POST', '/api/ai/generate', ({ body }) => [200, ai.generate(body.format, body)]);
+  on('POST', '/api/ai/generate', async (c) => { me(c); return [200, await ai.generate(c.body.format, c.body, { llm })]; });
   on('GET', '/api/ai/formats', () => [200, ai.FORMATS]);
 
   on('POST', '/api/reports', (c) => { me(c); return [201, store.report(c.body)]; });

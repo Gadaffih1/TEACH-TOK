@@ -13,7 +13,7 @@ function keyTerms(text, n = 5) {
   return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, n).map(([w]) => w);
 }
 
-function generate(format, { topic, text }) {
+function generateOffline(format, { topic, text }) {
   const source = text || topic || '';
   if (!source.trim()) throw Object.assign(new Error('topic or text is required'), { status: 400 });
   const title = topic || sentences(source)[0].slice(0, 60);
@@ -39,5 +39,15 @@ function generate(format, { topic, text }) {
 }
 
 const { extractFile: extract } = require('./extract');
+const { llmConfig, generateWithLLM } = require('./llm');
+
+// Uses the configured LLM when available; falls back to the offline generator on any failure.
+async function generate(format, input, { llm = llmConfig() } = {}) {
+  const offline = () => generateOffline(format, input); // validates format and input first
+  const base = offline();
+  if (!llm) return { ...base, source: 'offline' };
+  try { return { ...(await generateWithLLM(llm, format, input)), source: 'llm' }; }
+  catch (e) { console.warn('LLM generation failed, using offline fallback:', e.message); return { ...base, source: 'offline' }; }
+}
 
 module.exports = { generate, extract, FORMATS };
