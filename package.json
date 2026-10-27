@@ -1,0 +1,8 @@
+{
+  "name": "teach-tok",
+  "version": "0.1.0",
+  "description": "TikTok-style professional community for teachers with AI teaching tools",
+  "main": "src/server.js",
+  "scripts": { "start": "node src/server.js", "test": "node --test test/*.test.js" },
+  "license": "MIT"
+}
