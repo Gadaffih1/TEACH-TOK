@@ -19,7 +19,7 @@ pre{white-space:pre-wrap;background:#222;padding:8px}
 <select id="fmt"></select><button id="go">Generate</button><pre id="out"></pre></div>
 <script>
 const j=(u,o)=>fetch(u,o).then(r=>r.json());
-j('/api/feed').then(vs=>{feed.innerHTML=vs.map(v=>`<div class="card"><video src="${encodeURI(v.videoUrl)}" controls></video><h3></h3><div>${v.stats.likes} likes · ${v.stats.comments} comments</div></div>`).join('')||'<p style="padding:16px">No videos yet.</p>';
+j("/api/feed").then(vs=>{feed.innerHTML=vs.map(v=>`<div class="card"><video src="${encodeURI(v.videoUrl)}" controls></video><h3></h3><div>${v.stats.likes} likes · ${v.stats.comments} comments</div></div>`).join('')||'<p style="padding:16px">No videos yet.</p>';
 [...feed.querySelectorAll('h3')].forEach((h,i)=>h.textContent=vs[i].title+' — '+vs[i].concept)});
 j('/api/ai/formats').then(f=>fmt.innerHTML=f.map(x=>`<option>${x}</option>`).join(''));
 go.onclick=async()=>{out.textContent=JSON.stringify(await j('/api/ai/generate',{method:'POST',body:JSON.stringify({format:fmt.value,text:src.value})}),null,2)};

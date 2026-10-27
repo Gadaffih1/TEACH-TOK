@@ -14,3 +14,9 @@ summary, slides, lesson-plan, script, quiz, worksheet, video-outline), resource 
 with co-authoring, collections & badges, moderation/copyright reports, analytics.
 Data is in-memory and AI generation is a deterministic offline stand-in ready to be
 replaced by an LLM provider.
+
+## Authentication
+`POST /api/teachers` returns a `token`; send it in the `Authorization` header using the
+`Bearer` scheme. Actions like upload, like, comment, bookmark, follow and adding resources
+act as the token's teacher. Admin endpoints (verify, reports, takedown, analytics,
+collections) need the admin token; start the server with `ADMIN_TOKEN=... npm start`.

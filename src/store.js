@@ -92,9 +92,10 @@ function createStore() {
         && (!type || r.type === type) && (!subject || r.subject === subject)
         && (!s || `${r.title} ${r.content} ${r.subject}`.toLowerCase().includes(s)));
     },
-    addCoAuthor(rid, tid) {
+    addCoAuthor(rid, tid, requesterId) {
       need(db.teachers, tid, 'teacher');
       const r = need(db.resources, rid, 'resource');
+      if (r.teacherId !== requesterId) throw Object.assign(new Error('only the owner can add co-authors'), { status: 403 });
       if (!r.coAuthors.includes(tid)) r.coAuthors.push(tid);
       return r;
     },
