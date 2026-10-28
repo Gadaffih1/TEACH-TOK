@@ -43,6 +43,10 @@ export const App: React.FC = () => {
   const [isBinderOpen, setIsBinderOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 
+  const modalOpen =
+    !!activeResourceVideo || !!activeCommentsVideo || !!activeAIVideo || !!activeRemixVideo ||
+    isCreateOpen || isBinderOpen || isAboutOpen;
+
   // Filtered videos
   const filteredVideos = useMemo(() => {
     return videos.filter((v) => {
@@ -181,7 +185,7 @@ export const App: React.FC = () => {
         }}
         onOpenAbout={() => setIsAboutOpen(true)}
         isMuted={isMuted}
-        onToggleMute={() => setIsMuted(!isMuted)}
+        onToggleMute={() => setIsMuted((m) => !m)}
       />
 
       {/* Main App Content: TikTok Video Feed */}
@@ -190,6 +194,9 @@ export const App: React.FC = () => {
           videos={filteredVideos}
           currentIndex={safeIndex}
           onNavigate={setCurrentIndex}
+          isMuted={isMuted}
+          onToggleMute={() => setIsMuted((m) => !m)}
+          isPaused={modalOpen}
           onToggleLike={handleToggleLike}
           onToggleBookmark={handleToggleBookmark}
           onOpenResources={(v) => setActiveResourceVideo(v)}

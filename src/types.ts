@@ -76,6 +76,9 @@ export interface TeachTokVideo {
   teacher: Teacher;
   videoDuration: number; // seconds
   visualStyle: VisualStyle;
+  videoUrl?: string;
+  audioUrl?: string;
+  narrationScript?: string;
   likes: number;
   isLiked?: boolean;
   bookmarks: number;
