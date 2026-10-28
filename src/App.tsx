@@ -185,7 +185,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main App Content: TikTok Video Feed */}
-      <main className="flex-1 pt-28 pb-4 px-2 sm:px-4 flex items-center justify-center">
+      <main className="flex-1 pt-28 pb-4 px-2 sm:px-4 flex items-start justify-center">
         <VideoFeed
           videos={filteredVideos}
           currentIndex={safeIndex}

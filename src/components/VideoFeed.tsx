@@ -86,7 +86,8 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({
   }
 
   return (
-    <div className="relative w-full h-[calc(100vh-7rem)] max-w-md mx-auto flex items-center justify-center select-none">
+    <div className="w-full flex flex-col gap-6 select-none">
+    <div className="relative w-full h-[calc(100vh-7rem)] max-w-md mx-auto flex items-center justify-center">
       {/* Main TikTok Video Phone Screen Container */}
       <div className="relative w-full h-full max-h-[780px] bg-slate-950 rounded-3xl border border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col">
         {/* Dynamic Concept Interactive Canvas / Video Simulation */}
@@ -341,6 +342,31 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({
           <ChevronDown className="w-5 h-5" />
         </button>
       </div>
+    </div>
+
+    {/* Responsive grid of all teacher-shared videos */}
+    <div className="w-full max-w-7xl mx-auto grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+      {videos.map((video, index) => (
+        <button
+          key={video.id}
+          onClick={() => {
+            onNavigate(index);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={`relative w-full aspect-[9/16] overflow-hidden rounded-2xl border text-left transition ${
+            index === currentIndex ? 'border-indigo-500' : 'border-slate-800 hover:border-slate-600'
+          }`}
+        >
+          <div className="w-full h-full pointer-events-none [&_*]:object-cover">
+            <ConceptVisualizer style={video.visualStyle} isPlaying={false} concept={video.concept} />
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
+            <p className="text-sm font-bold text-white line-clamp-2">{video.title}</p>
+            <p className="text-[11px] text-slate-300">{video.teacher.name}</p>
+          </div>
+        </button>
+      ))}
+    </div>
     </div>
   );
 };
