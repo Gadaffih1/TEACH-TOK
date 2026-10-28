@@ -7,7 +7,7 @@ const GRADE_BANDS: GradeBand[] = ['Elementary (K-5)', 'Middle School (6-8)', 'Hi
 const SUBJECTS = ['Math', 'Science', 'English & ELA', 'History & Social Studies', 'Arts', 'Classroom Management'];
 
 const inputCls =
-  'w-full rounded-xl bg-slate-900 border border-slate-700/80 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition';
+  'w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition';
 
 export const AuthPage: React.FC = () => {
   const { login, signUp } = useAuth();
@@ -42,23 +42,29 @@ export const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans">
+    <div className="min-h-screen bg-slate-100 text-slate-800 flex items-center justify-center p-4 font-sans">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-md space-y-4 rounded-2xl bg-slate-900/60 border border-slate-800 p-6"
+        className="w-full max-w-md space-y-4 rounded-3xl bg-white border border-slate-200 p-8 shadow-xl"
       >
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
             <GraduationCap className="w-6 h-6" />
           </div>
-          <h1 className="text-xl font-extrabold tracking-tight">TEACHTOK</h1>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
+              TEACH<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">TOK</span>
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">For verified educators</p>
+          </div>
         </div>
-        <p className="text-sm text-slate-400">
+
+        <p className="text-sm text-slate-600 pt-1">
           {mode === 'login' ? 'Sign in to your educator account.' : 'Create your educator account.'}
         </p>
 
         {mode === 'signup' && (
-          <>
+          <div className="space-y-3">
             <input className={inputCls} placeholder="Display name" value={displayName}
               onChange={(e) => setDisplayName(e.target.value)} required />
             <input className={inputCls} placeholder="School (optional)" value={school}
@@ -66,19 +72,22 @@ export const AuthPage: React.FC = () => {
             <select className={inputCls} value={gradeBand} onChange={(e) => setGradeBand(e.target.value as GradeBand)}>
               {GRADE_BANDS.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
-            <div className="flex flex-wrap gap-2">
-              {SUBJECTS.map((s) => (
-                <button type="button" key={s} onClick={() => toggleSubject(s)}
-                  className={`px-3 py-1 rounded-full text-xs border ${
-                    subjects.includes(s)
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'border-slate-700 text-slate-300'
-                  }`}>
-                  {s}
-                </button>
-              ))}
+            <div>
+              <span className="text-xs font-semibold text-slate-600 mb-1.5 block">Subjects you teach:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {SUBJECTS.map((s) => (
+                  <button type="button" key={s} onClick={() => toggleSubject(s)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition cursor-pointer ${
+                      subjects.includes(s)
+                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    }`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </>
+          </div>
         )}
 
         <input className={inputCls} type="email" placeholder="Email" value={email}
@@ -87,22 +96,24 @@ export const AuthPage: React.FC = () => {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required />
 
-        {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
+        {error && <p role="alert" className="text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-200 p-2.5 rounded-xl">{error}</p>}
 
         <button type="submit" disabled={busy}
-          className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 py-2 font-semibold transition">
+          className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 py-2.5 font-bold text-white transition shadow-sm cursor-pointer">
           {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
         </button>
 
-        <button type="button" className="w-full text-sm text-slate-400 hover:text-slate-200"
+        <button type="button" className="w-full text-xs text-slate-500 hover:text-indigo-600 transition cursor-pointer font-medium"
           onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}>
           {mode === 'login' ? 'New here? Create an account' : 'Already have an account? Sign in'}
         </button>
 
         {mode === 'login' && (
-          <p className="text-xs text-slate-500 text-center">
-            Demo: teacher@teachtok.dev / teacher1234 · admin@teachtok.dev / admin1234
-          </p>
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-500 text-center space-y-0.5">
+            <span className="font-semibold text-slate-700 block mb-0.5">Quick Demo Logins:</span>
+            <div><span className="font-mono text-indigo-700">teacher@teachtok.dev</span> / <span className="font-mono">teacher1234</span></div>
+            <div><span className="font-mono text-indigo-700">admin@teachtok.dev</span> / <span className="font-mono">admin1234</span></div>
+          </div>
         )}
       </form>
     </div>

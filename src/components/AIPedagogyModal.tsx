@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TeachTokVideo, GradeBand } from '../types';
-import { X, Sparkles, Wand2, Copy, Check, ArrowRight, Brain, Lightbulb, Compass, FileCheck } from 'lucide-react';
+import { X, Sparkles, Wand2, Copy, Check, Brain, Lightbulb, Compass, FileCheck } from 'lucide-react';
 
 interface AIPedagogyModalProps {
   video: TeachTokVideo;
@@ -19,7 +19,6 @@ export const AIPedagogyModal: React.FC<AIPedagogyModalProps> = ({
 
   const [activeTask, setActiveTask] = useState<'adapt_grade' | 'new_analogies' | 'misconceptions' | 'bellringer'>('adapt_grade');
   const [targetGrade, setTargetGrade] = useState<GradeBand>('Elementary (K-5)');
-  const [customSubjectFocus, setCustomSubjectFocus] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiOutput, setAiOutput] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -84,7 +83,7 @@ Fist-to-Five: How confident are you explaining this to a classmate who missed sc
 
       setAiOutput(result);
       setIsGenerating(false);
-    }, 700);
+    }, 600);
   };
 
   const handleCopy = () => {
@@ -95,98 +94,98 @@ Fist-to-Five: How confident are you explaining this to a classmate who missed sc
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-2xl bg-slate-900 border border-indigo-500/40 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/40 backdrop-blur-xs animate-fadeIn">
+      <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-slate-800">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-indigo-950/80 via-slate-950 to-purple-950/80">
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-400/50 flex items-center justify-center text-indigo-300">
-              <Sparkles className="w-5 h-5 animate-pulse" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-white text-base sm:text-lg">TeachTok AI Pedagogical Assistant</h3>
+                <h3 className="font-bold text-slate-900 text-base sm:text-lg">TeachTok AI Pedagogical Assistant</h3>
                 <span className="text-[10px] font-mono uppercase bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold">
                   AI Powered
                 </span>
               </div>
-              <p className="text-xs text-slate-300">
-                Transforming concept: <strong className="text-white">"{video.concept}"</strong>
+              <p className="text-xs text-slate-500">
+                Transforming concept: <strong className="text-slate-800">"{video.concept}"</strong>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Task selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-slate-950/50 border-b border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-slate-50 border-b border-slate-200">
           <button
             onClick={() => { setActiveTask('adapt_grade'); setAiOutput(null); }}
-            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border ${
+            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border cursor-pointer ${
               activeTask === 'adapt_grade'
-                ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'
+                ? 'bg-indigo-50 border-indigo-400 text-indigo-900 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <Brain className="w-4 h-4 text-indigo-400" />
+            <Brain className="w-4 h-4 text-indigo-600" />
             <span className="text-xs font-bold">Differentiate Grade</span>
-            <span className="text-[10px] text-slate-400">Scale up/down</span>
+            <span className="text-[10px] text-slate-500">Scale up/down</span>
           </button>
 
           <button
             onClick={() => { setActiveTask('new_analogies'); setAiOutput(null); }}
-            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border ${
+            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border cursor-pointer ${
               activeTask === 'new_analogies'
-                ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'
+                ? 'bg-amber-50 border-amber-400 text-amber-900 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <Lightbulb className="w-4 h-4 text-amber-400" />
+            <Lightbulb className="w-4 h-4 text-amber-600" />
             <span className="text-xs font-bold">3 New Analogies</span>
-            <span className="text-[10px] text-slate-400">Gaming, sports, food</span>
+            <span className="text-[10px] text-slate-500">Gaming, sports, food</span>
           </button>
 
           <button
             onClick={() => { setActiveTask('misconceptions'); setAiOutput(null); }}
-            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border ${
+            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border cursor-pointer ${
               activeTask === 'misconceptions'
-                ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'
+                ? 'bg-rose-50 border-rose-400 text-rose-900 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <Compass className="w-4 h-4 text-rose-400" />
+            <Compass className="w-4 h-4 text-rose-600" />
             <span className="text-xs font-bold">Misconceptions</span>
-            <span className="text-[10px] text-slate-400">Anticipate student errors</span>
+            <span className="text-[10px] text-slate-500">Anticipate student errors</span>
           </button>
 
           <button
             onClick={() => { setActiveTask('bellringer'); setAiOutput(null); }}
-            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border ${
+            className={`p-2.5 rounded-xl text-left transition flex flex-col gap-1 border cursor-pointer ${
               activeTask === 'bellringer'
-                ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800'
+                ? 'bg-emerald-50 border-emerald-400 text-emerald-900 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <FileCheck className="w-4 h-4 text-emerald-400" />
+            <FileCheck className="w-4 h-4 text-emerald-600" />
             <span className="text-xs font-bold">Exit Ticket</span>
-            <span className="text-[10px] text-slate-400">5-min check</span>
+            <span className="text-[10px] text-slate-500">5-min check</span>
           </button>
         </div>
 
         {/* Options Bar */}
-        <div className="p-3 bg-slate-900/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="p-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
           {activeTask === 'adapt_grade' && (
             <div className="flex items-center gap-2">
-              <span className="text-slate-400">Target Grade Band:</span>
+              <span className="text-slate-600 font-medium">Target Grade Band:</span>
               <select
                 value={targetGrade}
                 onChange={(e) => setTargetGrade(e.target.value as GradeBand)}
-                className="bg-slate-800 text-white rounded-lg px-2.5 py-1.5 border border-slate-700 outline-none"
+                className="bg-slate-50 text-slate-800 rounded-lg px-2.5 py-1.5 border border-slate-200 outline-none focus:border-indigo-500"
               >
                 <option value="Elementary (K-5)">Elementary (K-5)</option>
                 <option value="Middle School (6-8)">Middle School (6-8)</option>
@@ -200,7 +199,7 @@ Fist-to-Five: How confident are you explaining this to a classmate who missed sc
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-600/30 disabled:opacity-60"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 shadow-xs disabled:opacity-60 cursor-pointer"
             >
               <Wand2 className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
               {isGenerating ? 'AI Crafting Lesson Strategy...' : 'Generate Pedagogical Adaptation'}
@@ -209,11 +208,11 @@ Fist-to-Five: How confident are you explaining this to a classmate who missed sc
         </div>
 
         {/* Output Area */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-950/60">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-50/60">
           {aiOutput ? (
             <div className="space-y-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-inner">
-                <pre className="text-xs sm:text-sm text-slate-200 whitespace-pre-wrap font-sans leading-relaxed">
+              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
+                <pre className="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap font-sans leading-relaxed">
                   {aiOutput}
                 </pre>
               </div>
@@ -221,9 +220,9 @@ Fist-to-Five: How confident are you explaining this to a classmate who missed sc
               <div className="flex items-center justify-between gap-2">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl transition"
+                  className="flex items-center gap-1.5 text-xs bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl transition cursor-pointer shadow-xs"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                   {copied ? 'Copied!' : 'Copy to Clipboard'}
                 </button>
 
@@ -232,16 +231,16 @@ Fist-to-Five: How confident are you explaining this to a classmate who missed sc
                     onSaveToBinder(`AI Adapt: ${video.concept}`, aiOutput);
                     onClose();
                   }}
-                  className="flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl transition font-semibold"
+                  className="flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl transition font-semibold cursor-pointer shadow-xs"
                 >
                   Save to My Lesson Binder
                 </button>
               </div>
             </div>
           ) : (
-            <div className="h-48 flex flex-col items-center justify-center text-center text-slate-400 space-y-2">
+            <div className="h-48 flex flex-col items-center justify-center text-center text-slate-500 space-y-2">
               <Sparkles className="w-8 h-8 text-indigo-400 opacity-60" />
-              <p className="text-sm font-semibold text-slate-300">Ready to adapt this teaching strategy</p>
+              <p className="text-sm font-semibold text-slate-700">Ready to adapt this teaching strategy</p>
               <p className="text-xs text-slate-500 max-w-sm">
                 Click "Generate Pedagogical Adaptation" above to produce customized analogies, differentiated grade-band scripts, or exit tickets.
               </p>

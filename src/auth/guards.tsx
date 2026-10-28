@@ -10,7 +10,7 @@ export const RequireAuth: React.FC<{ children: React.ReactNode; fallback: React.
   const { user, isLoading } = useAuth();
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center text-slate-600">
         Loading…
       </div>
     );

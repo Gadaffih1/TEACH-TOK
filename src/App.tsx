@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TeachTokVideo, SubjectFilter, TeacherComment } from './types';
+import { TeachTokVideo, SubjectFilter, TeachingStrategy, TeacherComment } from './types';
 import { INITIAL_VIDEOS } from './data/mockVideos';
 import { Navbar } from './components/Navbar';
 import { VideoFeed } from './components/VideoFeed';
@@ -20,6 +20,7 @@ export const App: React.FC = () => {
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<SubjectFilter>('all');
+  const [selectedStrategy, setSelectedStrategy] = useState<TeachingStrategy>('all');
   const [selectedGrade, setSelectedGrade] = useState('all');
   const [isMuted, setIsMuted] = useState(false);
 
@@ -53,6 +54,9 @@ export const App: React.FC = () => {
       // Subject filter
       if (selectedSubject !== 'all' && v.subject !== selectedSubject) return false;
 
+      // Teaching Strategy filter
+      if (selectedStrategy !== 'all' && v.teachingStrategy !== selectedStrategy) return false;
+
       // Grade filter
       if (selectedGrade !== 'all' && v.gradeBand !== selectedGrade) return false;
 
@@ -65,14 +69,15 @@ export const App: React.FC = () => {
         const matchTeacher = v.teacher.name.toLowerCase().includes(q);
         const matchStandard = v.standardCode.toLowerCase().includes(q);
         const matchPedagogy = v.pedagogyTag.toLowerCase().includes(q);
-        if (!matchTitle && !matchConcept && !matchSubject && !matchTeacher && !matchStandard && !matchPedagogy) {
+        const matchStrategy = v.teachingStrategy.toLowerCase().includes(q);
+        if (!matchTitle && !matchConcept && !matchSubject && !matchTeacher && !matchStandard && !matchPedagogy && !matchStrategy) {
           return false;
         }
       }
 
       return true;
     });
-  }, [videos, selectedSubject, selectedGrade, searchQuery]);
+  }, [videos, selectedSubject, selectedStrategy, selectedGrade, searchQuery]);
 
   // Ensure current index is within bounds of filtered list
   const safeIndex = useMemo(() => {
@@ -163,13 +168,15 @@ export const App: React.FC = () => {
   }, [videos, savedVideoIds]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col font-sans">
       {/* Top Navigation */}
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         selectedSubject={selectedSubject}
         onSelectSubject={(sub) => { setSelectedSubject(sub); setCurrentIndex(0); }}
+        selectedStrategy={selectedStrategy}
+        onSelectStrategy={(strat) => { setSelectedStrategy(strat); setCurrentIndex(0); }}
         selectedGrade={selectedGrade}
         onSelectGrade={(gr) => { setSelectedGrade(gr); setCurrentIndex(0); }}
         savedCount={savedVideoIds.size + savedNotes.length}
@@ -189,7 +196,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main App Content: TikTok Video Feed */}
-      <main className="flex-1 pt-28 pb-4 px-2 sm:px-4 flex items-center justify-center">
+      <main className="flex-1 pt-32 pb-4 px-2 sm:px-4 flex items-center justify-center">
         <VideoFeed
           videos={filteredVideos}
           currentIndex={safeIndex}
