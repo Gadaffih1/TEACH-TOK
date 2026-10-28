@@ -27,6 +27,15 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
   const [keyAnalogy, setKeyAnalogy] = useState('');
   const [misconceptionBuster, setMisconceptionBuster] = useState('');
   const [visualStyle, setVisualStyle] = useState<VisualStyle>('fractions_visualizer');
+  const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined);
+  const [videoFileName, setVideoFileName] = useState('');
+
+  const handleVideoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    setVideoUrl(file ? URL.createObjectURL(file) : undefined);
+    setVideoFileName(file ? file.name : '');
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +43,7 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
 
     const newVideo: TeachTokVideo = {
       id: `vid-teacher-${Date.now()}`,
+      videoUrl,
       title: title.trim(),
       concept: concept.trim(),
       subject,
@@ -265,6 +275,19 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
               onChange={(e) => setMisconceptionBuster(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Video File (optional, plays with sound)
+            </label>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={handleVideoFile}
+              className="w-full text-xs text-slate-300"
+            />
+            {videoFileName && <p className="text-[10px] text-slate-500 mt-1">{videoFileName}</p>}
           </div>
 
           <div>

@@ -1,31 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { TeachTokVideo } from '../types';
-import { ConceptVisualizer } from './conceptVisualizers';
-import {
-  Heart,
-  MessageSquare,
-  Bookmark,
-  Share2,
-  BookOpen,
-  Sparkles,
-  GitCompare,
-  Play,
-  Pause,
-  ChevronUp,
-  ChevronDown,
-  Volume2,
-  VolumeX,
-  Award,
-  Check,
-  Zap,
-  Info,
-  Maximize2
-} from 'lucide-react';
+import { VideoSlide } from './VideoSlide';
+import { useVerticalSwipe, SwipeDirection } from '../hooks/useVerticalSwipe';
+import { BookOpen, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface VideoFeedProps {
   videos: TeachTokVideo[];
   currentIndex: number;
   onNavigate: (index: number) => void;
+  isMuted: boolean;
+  onToggleMute: () => void;
+  isPaused?: boolean;
   onToggleLike: (videoId: string) => void;
   onToggleBookmark: (videoId: string) => void;
   onOpenResources: (video: TeachTokVideo) => void;
@@ -34,10 +19,19 @@ interface VideoFeedProps {
   onOpenRemix: (video: TeachTokVideo) => void;
 }
 
+const SLIDE_MS = 350;
+const BOUNCE_PX = 40;
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
 export const VideoFeed: React.FC<VideoFeedProps> = ({
   videos,
   currentIndex,
   onNavigate,
+  isMuted,
+  onToggleMute,
+  isPaused = false,
   onToggleLike,
   onToggleBookmark,
   onOpenResources,
@@ -45,19 +39,72 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({
   onOpenAI,
   onOpenRemix,
 }) => {
+  const count = videos.length;
   const currentVideo = videos[currentIndex] || videos[0];
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
-  const [shareToast, setShareToast] = useState(false);
-  const [showPedagogyBreakdown, setShowPedagogyBreakdown] = useState(false);
+  const [bounce, setBounce] = useState(0);
+  const [leavingIndex, setLeavingIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lockUntil = useRef(0);
+
+  const canWrap = count >= 3;
+  const canNext = count > 1;
+  const canPrev = currentIndex > 0;
+
+  const slideMs = prefersReducedMotion() ? 0 : SLIDE_MS;
+
+  useEffect(() => {
+    setIsPlaying(true);
+  }, [currentVideo?.id]);
+
+  const navigate = useCallback(
+    (direction: SwipeDirection) => {
+      const now = performance.now();
+      if (now < lockUntil.current) return;
+      let target = currentIndex + direction;
+      if (direction === 1 && target >= count) {
+        if (canWrap) {
+          target = 0;
+          setLeavingIndex(currentIndex);
+          setTimeout(() => setLeavingIndex(null), SLIDE_MS + 100);
+        } else {
+          target = -1;
+        }
+      }
+      if (target < 0 || target >= count || target === currentIndex) {
+        if (count > 0 && !prefersReducedMotion()) {
+          setBounce(direction === 1 ? -BOUNCE_PX : BOUNCE_PX);
+          setTimeout(() => setBounce(0), 180);
+          lockUntil.current = now + 300;
+        }
+        return;
+      }
+      lockUntil.current = now + slideMs + 50;
+      onNavigate(target);
+    },
+    [currentIndex, count, canWrap, slideMs, onNavigate]
+  );
+
+  const swipe = useVerticalSwipe({
+    containerRef,
+    onNavigate: navigate,
+    enabled: count > 0 && !isPaused,
+    canPrev,
+    canNext,
+  });
 
   // Keyboard navigation
   useEffect(() => {
+    if (isPaused) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (['ArrowDown', 'j', 'J'].includes(e.key)) {
-        if (currentIndex < videos.length - 1) onNavigate(currentIndex + 1);
+        e.preventDefault();
+        navigate(1);
       } else if (['ArrowUp', 'k', 'K'].includes(e.key)) {
-        if (currentIndex > 0) onNavigate(currentIndex - 1);
+        e.preventDefault();
+        navigate(-1);
       } else if (e.key === ' ') {
         e.preventDefault();
         setIsPlaying((p) => !p);
@@ -65,13 +112,7 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, videos.length, onNavigate]);
-
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setShareToast(true);
-    setTimeout(() => setShareToast(false), 2000);
-  };
+  }, [navigate, isPaused]);
 
   if (!currentVideo) {
     return (
@@ -85,243 +126,66 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({
     );
   }
 
+  // Only render previous, current and next slides
+  const visible: { index: number; rel: number }[] = [{ index: currentIndex, rel: 0 }];
+  if (currentIndex > 0) visible.push({ index: currentIndex - 1, rel: -1 });
+  if (currentIndex + 1 < count) visible.push({ index: currentIndex + 1, rel: 1 });
+  else if (canWrap) visible.push({ index: 0, rel: 1 });
+  if (leavingIndex !== null && !visible.some((v) => v.index === leavingIndex)) {
+    visible.push({ index: leavingIndex, rel: -1 });
+  }
+
+  const totalOffset = swipe.offset + bounce;
+
   return (
     <div className="relative w-full h-[calc(100vh-7rem)] max-w-md mx-auto flex items-center justify-center select-none">
       {/* Main TikTok Video Phone Screen Container */}
-      <div className="relative w-full h-full max-h-[780px] bg-slate-950 rounded-3xl border border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col">
-        {/* Dynamic Concept Interactive Canvas / Video Simulation */}
-        <div
-          className="relative w-full flex-1 overflow-hidden cursor-pointer"
-          onClick={() => setIsPlaying(!isPlaying)}
-        >
-          <ConceptVisualizer
-            style={currentVideo.visualStyle}
-            isPlaying={isPlaying}
-            concept={currentVideo.concept}
-          />
-
-          {/* Play/Pause indicator overlay */}
-          {!isPlaying && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 pointer-events-none">
-              <div className="w-16 h-16 rounded-full bg-slate-900/80 border border-white/20 flex items-center justify-center text-white backdrop-blur shadow-2xl">
-                <Play className="w-8 h-8 fill-white ml-1" />
-              </div>
-            </div>
-          )}
-
-          {/* Sound toggle button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMuted(!isMuted);
-            }}
-            className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-950/70 border border-slate-700/60 text-slate-200 hover:text-white backdrop-blur transition"
-            title={isMuted ? 'Unmute' : 'Mute'}
-          >
-            {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-          </button>
-
-          {/* Teacher Subject & Standard Tag Header */}
-          <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-1.5 max-w-[70%]">
-            <span className="text-[10px] font-bold text-white bg-indigo-600/90 px-2 py-0.5 rounded-full backdrop-blur shadow-sm">
-              {currentVideo.subject}
-            </span>
-            <span className="text-[10px] font-mono font-medium text-slate-300 bg-slate-900/80 border border-slate-700/60 px-2 py-0.5 rounded-full backdrop-blur">
-              {currentVideo.gradeBand}
-            </span>
-            <span className="text-[9px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded-full border border-indigo-500/30 backdrop-blur">
-              {currentVideo.standardCode}
-            </span>
-          </div>
-
-          {/* Pedagogical Technique Badge */}
-          <div className="absolute top-12 left-4 z-20 mt-1">
-            <div className="text-[10px] text-amber-300 font-semibold bg-amber-950/70 border border-amber-500/40 px-2 py-0.5 rounded-full backdrop-blur flex items-center gap-1">
-              <Zap className="w-3 h-3 text-amber-400" />
-              <span>{currentVideo.pedagogyTag}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Video Bottom Overlay: Concept information, Teacher info, Key Analogy */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 pt-10 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent z-20 pointer-events-none">
-          <div className="pointer-events-auto space-y-2 pr-14">
-            {/* Teacher row */}
-            <div className="flex items-center gap-2">
-              <img
-                src={currentVideo.teacher.avatar}
-                alt={currentVideo.teacher.name}
-                className="w-8 h-8 rounded-full object-cover border-2 border-indigo-500"
+      <div
+        ref={containerRef}
+        {...swipe.bind}
+        style={{ touchAction: 'none', overscrollBehavior: 'contain' }}
+        className="relative w-full h-full max-h-[780px] bg-slate-950 rounded-3xl border border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden"
+      >
+        {visible.map(({ index, rel }) => {
+          const video = videos[index];
+          return (
+            <div
+              key={video.id}
+              className="absolute inset-0"
+              style={{
+                transform: `translateY(calc(${rel * 100}% + ${totalOffset}px))`,
+                transition: swipe.isDragging ? 'none' : `transform ${slideMs}ms ease-out`,
+                willChange: 'transform',
+              }}
+            >
+              <VideoSlide
+                video={video}
+                isActive={rel === 0 && index === currentIndex}
+                isPlaying={isPlaying}
+                isMuted={isMuted}
+                isPaused={isPaused}
+                onTogglePlay={() => {
+                  if (swipe.didDrag.current) return;
+                  setIsPlaying((p) => !p);
+                }}
+                onToggleMute={onToggleMute}
+                onToggleLike={onToggleLike}
+                onToggleBookmark={onToggleBookmark}
+                onOpenResources={onOpenResources}
+                onOpenComments={onOpenComments}
+                onOpenAI={onOpenAI}
+                onOpenRemix={onOpenRemix}
               />
-              <div className="leading-tight">
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-bold text-white">{currentVideo.teacher.name}</span>
-                  <Award className="w-3 h-3 text-indigo-400" />
-                </div>
-                <span className="text-[10px] text-slate-400">
-                  {currentVideo.teacher.role} • {currentVideo.teacher.school}
-                </span>
-              </div>
             </div>
-
-            {/* Video Title & Concept */}
-            <div>
-              <h2 className="text-sm font-extrabold text-white leading-snug drop-shadow-sm">
-                {currentVideo.title}
-              </h2>
-              <p className="text-xs text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
-                {currentVideo.summary}
-              </p>
-            </div>
-
-            {/* Interactive Concept Drawer Trigger */}
-            <div className="pt-1">
-              <button
-                onClick={() => setShowPedagogyBreakdown(!showPedagogyBreakdown)}
-                className="text-[11px] font-semibold text-indigo-300 hover:text-indigo-200 bg-indigo-950/80 border border-indigo-500/40 px-2.5 py-1 rounded-lg backdrop-blur flex items-center gap-1 transition"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                {showPedagogyBreakdown ? 'Hide Strategy Breakdown' : 'View Teacher Hook & Analogy'}
-              </button>
-
-              {showPedagogyBreakdown && (
-                <div className="mt-2 p-3 bg-slate-900/95 border border-slate-800 rounded-xl space-y-2 text-xs backdrop-blur shadow-2xl animate-fadeIn">
-                  <div>
-                    <span className="text-[10px] text-amber-400 font-bold uppercase block">Classroom Hook (10s):</span>
-                    <p className="text-slate-200 text-[11px] italic">"{currentVideo.classroomHook}"</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-indigo-400 font-bold uppercase block">Core Analogy:</span>
-                    <p className="text-slate-200 text-[11px]">{currentVideo.keyAnalogy}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-rose-400 font-bold uppercase block">Student Trap Avoided:</span>
-                    <p className="text-slate-200 text-[11px]">{currentVideo.misconceptionBuster}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Action Rail (TikTok Style) */}
-        <div className="absolute right-3 bottom-14 z-30 flex flex-col items-center gap-3.5">
-          {/* Stole This Idea / Like */}
-          <button
-            onClick={() => onToggleLike(currentVideo.id)}
-            className="flex flex-col items-center gap-0.5 group"
-            title="I stole this idea for my class!"
-          >
-            <div
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition backdrop-blur shadow-lg ${
-                currentVideo.isLiked
-                  ? 'bg-rose-600 text-white scale-110'
-                  : 'bg-slate-900/80 border border-slate-700/80 text-slate-300 group-hover:text-rose-400 group-hover:scale-105'
-              }`}
-            >
-              <Heart className={`w-5 h-5 ${currentVideo.isLiked ? 'fill-white' : ''}`} />
-            </div>
-            <span className="text-[10px] font-bold text-slate-300">
-              {currentVideo.likes.toLocaleString()}
-            </span>
-          </button>
-
-          {/* Interactive Lesson Resources */}
-          <button
-            onClick={() => onOpenResources(currentVideo)}
-            className="flex flex-col items-center gap-0.5 group"
-            title="Download lesson hook & worksheets"
-          >
-            <div className="w-11 h-11 rounded-full bg-indigo-600/90 hover:bg-indigo-500 border border-indigo-400/50 flex items-center justify-center text-white backdrop-blur shadow-lg group-hover:scale-105 transition animate-pulse">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] font-bold text-indigo-300">Resources</span>
-          </button>
-
-          {/* Field Notes & Comments */}
-          <button
-            onClick={() => onOpenComments(currentVideo)}
-            className="flex flex-col items-center gap-0.5 group"
-            title="Teacher classroom discussion"
-          >
-            <div className="w-11 h-11 rounded-full bg-slate-900/80 border border-slate-700/80 flex items-center justify-center text-slate-300 group-hover:text-white group-hover:scale-105 backdrop-blur transition shadow-lg">
-              <MessageSquare className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] font-bold text-slate-300">
-              {currentVideo.comments.length}
-            </span>
-          </button>
-
-          {/* Save to Lesson Binder */}
-          <button
-            onClick={() => onToggleBookmark(currentVideo.id)}
-            className="flex flex-col items-center gap-0.5 group"
-            title="Save to teacher binder"
-          >
-            <div
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition backdrop-blur shadow-lg ${
-                currentVideo.isBookmarked
-                  ? 'bg-amber-500 text-slate-950 scale-110'
-                  : 'bg-slate-900/80 border border-slate-700/80 text-slate-300 group-hover:text-amber-400 group-hover:scale-105'
-              }`}
-            >
-              <Bookmark className={`w-5 h-5 ${currentVideo.isBookmarked ? 'fill-slate-950' : ''}`} />
-            </div>
-            <span className="text-[10px] font-bold text-slate-300">
-              {currentVideo.bookmarks.toLocaleString()}
-            </span>
-          </button>
-
-          {/* Pedagogical Duet / Remix */}
-          <button
-            onClick={() => onOpenRemix(currentVideo)}
-            className="flex flex-col items-center gap-0.5 group"
-            title="See alternative teaching methods"
-          >
-            <div className="w-11 h-11 rounded-full bg-purple-600/80 hover:bg-purple-500 border border-purple-400/50 flex items-center justify-center text-white backdrop-blur shadow-lg group-hover:scale-105 transition">
-              <GitCompare className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] font-bold text-purple-300">Remix</span>
-          </button>
-
-          {/* AI Concept Studio */}
-          <button
-            onClick={() => onOpenAI(currentVideo)}
-            className="flex flex-col items-center gap-0.5 group"
-            title="AI: Adapt for my grade level"
-          >
-            <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-white backdrop-blur shadow-lg group-hover:scale-105 transition">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] font-bold text-pink-300">AI Adapt</span>
-          </button>
-
-          {/* Share */}
-          <button
-            onClick={handleShare}
-            className="flex flex-col items-center gap-0.5 group"
-            title="Share with fellow teachers"
-          >
-            <div className="w-10 h-10 rounded-full bg-slate-900/80 border border-slate-700/80 flex items-center justify-center text-slate-300 group-hover:text-white backdrop-blur transition shadow">
-              {shareToast ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-            </div>
-            <span className="text-[9px] font-medium text-slate-400">
-              {shareToast ? 'Copied' : 'Share'}
-            </span>
-          </button>
-        </div>
-
-        {/* Video progress line */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800 z-30">
-          <div className="h-full bg-indigo-500 animate-pulse w-2/3" />
-        </div>
+          );
+        })}
       </div>
 
       {/* Floating Vertical Navigation Arrows (for desktop and easy navigation) */}
       <div className="hidden lg:flex flex-col gap-2 absolute -right-16 top-1/2 -translate-y-1/2 z-30">
         <button
-          onClick={() => currentIndex > 0 && onNavigate(currentIndex - 1)}
-          disabled={currentIndex === 0}
+          onClick={() => navigate(-1)}
+          disabled={!canPrev}
           className="w-11 h-11 rounded-2xl bg-slate-900/90 border border-slate-700/80 text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-indigo-600 hover:border-indigo-500 flex items-center justify-center shadow-lg transition"
           title="Previous Concept (Up Arrow)"
         >
@@ -329,12 +193,12 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({
         </button>
 
         <div className="text-[10px] font-mono font-bold text-slate-400 text-center py-1 bg-slate-950/80 rounded-lg border border-slate-800">
-          {currentIndex + 1} / {videos.length}
+          {currentIndex + 1} / {count}
         </div>
 
         <button
-          onClick={() => currentIndex < videos.length - 1 && onNavigate(currentIndex + 1)}
-          disabled={currentIndex === videos.length - 1}
+          onClick={() => navigate(1)}
+          disabled={!canNext}
           className="w-11 h-11 rounded-2xl bg-slate-900/90 border border-slate-700/80 text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-indigo-600 hover:border-indigo-500 flex items-center justify-center shadow-lg transition"
           title="Next Concept (Down Arrow)"
         >
