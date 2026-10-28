@@ -18,7 +18,7 @@ export const AIPedagogyModal: React.FC<AIPedagogyModalProps> = ({
   if (!isOpen) return null;
 
   const [activeTask, setActiveTask] = useState<'adapt_grade' | 'new_analogies' | 'misconceptions' | 'bellringer'>('adapt_grade');
-  const [targetGrade, setTargetGrade] = useState<GradeBand>('Elementary (K-5)');
+  const [targetGrade, setTargetGrade] = useState<GradeBand>('Junior School (Grade 7-9)');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiOutput, setAiOutput] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -187,10 +187,10 @@ Fist-to-Five: How confident are you explaining this to a classmate who missed sc
                 onChange={(e) => setTargetGrade(e.target.value as GradeBand)}
                 className="bg-slate-50 text-slate-800 rounded-lg px-2.5 py-1.5 border border-slate-200 outline-none focus:border-indigo-500"
               >
-                <option value="Elementary (K-5)">Elementary (K-5)</option>
-                <option value="Middle School (6-8)">Middle School (6-8)</option>
-                <option value="High School (9-12)">High School (9-12)</option>
-                <option value="Higher Ed">Higher Ed</option>
+                <option value="Lower Primary (Grade 1-3)">Lower Primary (Grade 1-3)</option>
+                <option value="Upper Primary (Grade 4-6)">Upper Primary (Grade 4-6)</option>
+                <option value="Junior School (Grade 7-9)">Junior School (Grade 7-9)</option>
+                <option value="Senior School (Grade 10-12)">Senior School (Grade 10-12)</option>
               </select>
             </div>
           )}

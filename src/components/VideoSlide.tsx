@@ -91,6 +91,11 @@ export const VideoSlide: React.FC<VideoSlideProps> = ({
             style={video.visualStyle}
             isPlaying={isActive && isPlaying}
             concept={video.concept}
+            hook={video.classroomHook}
+            analogy={video.keyAnalogy}
+            subject={video.subject}
+            title={video.title}
+            teacherName={video.teacher.name}
           />
         )}
 
@@ -134,10 +139,13 @@ export const VideoSlide: React.FC<VideoSlideProps> = ({
           <span className="text-[10px] font-mono font-medium text-slate-700 bg-white/90 border border-slate-200 px-2 py-0.5 rounded-full shadow-xs">
             {video.gradeBand}
           </span>
+          <span className="text-[9px] font-mono font-semibold text-emerald-800 bg-emerald-50/95 border border-emerald-300 px-2 py-0.5 rounded-full shadow-xs">
+            {video.standardCode}
+          </span>
         </div>
 
         {/* Pedagogical Technique Badge */}
-        <div className="absolute top-12 left-4 z-20 mt-1.5">
+        <div className="absolute top-12 left-4 z-20 mt-2.5">
           <div className="text-[10px] text-amber-900 font-bold bg-amber-100/95 border border-amber-300 px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
             <Zap className="w-3 h-3 text-amber-600" />
             <span>{video.pedagogyTag}</span>

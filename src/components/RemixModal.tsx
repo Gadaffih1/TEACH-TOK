@@ -80,8 +80,8 @@ export const RemixModal: React.FC<RemixModalProps> = ({
                     Approach B (Peer Remix)
                   </span>
                 </div>
-                <h4 className="text-sm font-bold text-slate-900 mb-0.5">Coach Marcus Sterling</h4>
-                <p className="text-xs text-slate-500 mb-3">Lincoln Elementary</p>
+                <h4 className="text-sm font-bold text-slate-900 mb-0.5">Tr. Faith Wanjiku</h4>
+                <p className="text-xs text-slate-500 mb-3">The Kenya High School, Nairobi</p>
 
                 <div className="space-y-2 text-xs">
                   <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">

@@ -48,6 +48,9 @@ const AMBIENT_CHORDS: Record<VisualStyle, number[]> = {
   pythagorean_visualizer: [220, 277.2, 329.6],
   zombie_grammar_visualizer: [130.8, 155.6, 185],
   chemical_bonds_visualizer: [174.6, 220, 261.6],
+  computer_studies_visualizer: [220, 261.6, 329.6],
+  kiswahili_visualizer: [261.6, 329.6, 392],
+  running_words_visualizer: [196, 246.9, 293.7],
   default: [220, 277.2, 330],
 };
 
@@ -198,15 +201,34 @@ export function useVideoAudio({ video, isActive, isPlaying, isMuted, isPaused = 
     };
   }, [videoUrl, audioUrl, audible]);
 
-  // Speech narration
+  // Speech narration - Kenyan educator voice
   useEffect(() => {
     if (videoUrl || audioUrl || !audible) return;
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     const synth = window.speechSynthesis;
     synth.cancel();
     const utterance = new SpeechSynthesisUtterance(narrationText);
-    utterance.rate = 0.95;
+    utterance.rate = 0.94;
+    utterance.pitch = 1.05; // Warm, rhythmic teacher cadence
     utterance.volume = 1;
+
+    const pickKenyanVoice = () => {
+      const voices = synth.getVoices();
+      const kenyanVoice =
+        voices.find((v) => v.lang === 'en-KE' || v.lang === 'en_KE' || v.name.toLowerCase().includes('kenya')) ||
+        voices.find((v) => v.lang.includes('sw') || v.name.toLowerCase().includes('swahili')) ||
+        voices.find((v) => v.lang === 'en-ZA' || v.lang === 'en-NG' || v.name.toLowerCase().includes('africa')) ||
+        voices.find((v) => v.lang === 'en-GB' || v.lang.startsWith('en-GB'));
+      if (kenyanVoice) {
+        utterance.voice = kenyanVoice;
+      }
+    };
+
+    pickKenyanVoice();
+    if (synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = pickKenyanVoice;
+    }
+
     synth.speak(utterance);
     return () => synth.cancel();
   }, [videoUrl, audioUrl, audible, narrationText]);

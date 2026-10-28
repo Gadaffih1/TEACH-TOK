@@ -46,12 +46,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
 }) => {
   const subjects: { id: SubjectFilter; label: string }[] = [
-    { id: 'all', label: '🔥 All Concepts' },
-    { id: 'Math', label: '📐 Math' },
-    { id: 'Science', label: '🔬 Science' },
+    { id: 'all', label: '🔥 All CBC Concepts' },
+    { id: 'Computer Studies', label: '💻 Computer Studies & ICT' },
+    { id: 'Kiswahili', label: '🇰🇪 Kiswahili' },
+    { id: 'Math', label: '📐 Mathematics' },
+    { id: 'Science', label: '🔬 Science (Chem/Bio/Phy)' },
     { id: 'English & ELA', label: '📚 English & ELA' },
-    { id: 'History & Social Studies', label: '🏛️ History & Civics' },
-    { id: 'Classroom Management', label: '🎯 Hooks & Management' },
+    { id: 'History & Social Studies', label: '🏛️ Social Studies & History' },
+    { id: 'Classroom Management', label: '🎯 CBC Facilitation & Hooks' },
   ];
 
   const strategies: { id: TeachingStrategy; label: string; icon: React.ReactNode }[] = [
@@ -75,19 +77,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               onSelectStrategy('all');
             }}
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-indigo-600 to-rose-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-xl tracking-tight text-slate-900">
-                  TEACH<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">TOK</span>
+                  TEACH<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-indigo-600 to-rose-600">TOK</span>
                 </span>
-                <span className="text-[10px] font-mono uppercase bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold">
-                  FOR EDUCATORS
+                <span className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-bold">
+                  KENYA CBC & KCSE
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 hidden sm:block">Where teachers discover and share great teaching</p>
+              <p className="text-[10px] text-slate-500 hidden sm:block">Where Kenyan Walimu discover and share great teaching</p>
             </div>
           </div>
         </div>
@@ -231,11 +233,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onChange={(e) => onSelectGrade(e.target.value)}
               className="bg-slate-100 text-slate-700 text-xs rounded-xl px-2.5 py-1.5 border border-slate-200 outline-none hover:border-slate-300 focus:border-indigo-500 font-medium transition"
             >
-              <option value="all">All Grades</option>
-              <option value="Elementary (K-5)">Elementary (K-5)</option>
-              <option value="Middle School (6-8)">Middle School (6-8)</option>
-              <option value="High School (9-12)">High School (9-12)</option>
-              <option value="Higher Ed">Higher Ed</option>
+              <option value="all">All Grades (CBC & KCSE)</option>
+              <option value="Lower Primary (Grade 1-3)">Lower Primary (Grade 1-3)</option>
+              <option value="Upper Primary (Grade 4-6)">Upper Primary (Grade 4-6)</option>
+              <option value="Junior School (Grade 7-9)">Junior School (Grade 7-9)</option>
+              <option value="Senior School (Grade 10-12)">Senior School (Grade 10-12)</option>
             </select>
           </div>
         </div>

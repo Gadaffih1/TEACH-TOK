@@ -1,4 +1,12 @@
-export type GradeBand = 'Elementary (K-5)' | 'Middle School (6-8)' | 'High School (9-12)' | 'Higher Ed';
+export type GradeBand = 
+  | 'Lower Primary (Grade 1-3)'
+  | 'Upper Primary (Grade 4-6)'
+  | 'Junior School (Grade 7-9)'
+  | 'Senior School (Grade 10-12)'
+  | 'Elementary (K-5)'
+  | 'Middle School (6-8)'
+  | 'High School (9-12)'
+  | 'Higher Ed';
 
 export interface Teacher {
   id: string;
@@ -9,7 +17,7 @@ export interface Teacher {
   school: string;
   subjects: string[];
   gradeBand: GradeBand;
-  badge: 'AP Master' | 'STEM Lead' | 'Instructional Coach' | 'National Board Certified' | 'Mentor Teacher';
+  badge: 'CBC Lead Facilitator' | 'TSC Excellence Teacher' | 'KICD Curriculum Champion' | 'STEM Lead' | 'Instructional Coach' | 'AP Master' | 'National Board Certified' | 'Mentor Teacher';
   stolenIdeasCount: number;
 }
 
@@ -59,6 +67,9 @@ export type VisualStyle =
   | 'pythagorean_visualizer'
   | 'zombie_grammar_visualizer'
   | 'chemical_bonds_visualizer'
+  | 'computer_studies_visualizer'
+  | 'kiswahili_visualizer'
+  | 'running_words_visualizer'
   | 'default';
 
 export type TeachingStrategy = 'all' | 'Direct Instruction' | 'Inquiry-Based' | 'Gamification' | 'Peer Review';
@@ -67,11 +78,11 @@ export interface TeachTokVideo {
   id: string;
   title: string;
   concept: string;
-  subject: 'Math' | 'Science' | 'English & ELA' | 'History & Social Studies' | 'Arts' | 'Classroom Management';
+  subject: 'Computer Studies' | 'Math' | 'Science' | 'Kiswahili' | 'English & ELA' | 'History & Social Studies' | 'Arts' | 'Classroom Management';
   gradeBand: GradeBand;
   teachingStrategy: 'Direct Instruction' | 'Inquiry-Based' | 'Gamification' | 'Peer Review';
-  standardCode: string; // e.g. CCSS.MATH.CONTENT.5.NF.B.4
-  pedagogyTag: string; // e.g. "CRA Concrete First", "Zombie Test Analogy", "Kinesthetic Modeling"
+  standardCode: string; // e.g. KICD.CBC.COMP.G7, KICD.MATH.G8, KCSE.PHY.F3
+  pedagogyTag: string; // e.g. "CBC Competency Task", "M-Pesa Algorithm Analogy", "Kinesthetic Modeling"
   summary: string;
   teacher: Teacher;
   videoDuration: number; // seconds
@@ -98,5 +109,4 @@ export interface TeachTokVideo {
   };
 }
 
-export type SubjectFilter = 'all' | 'Math' | 'Science' | 'English & ELA' | 'History & Social Studies' | 'Classroom Management';
-
+export type SubjectFilter = 'all' | 'Computer Studies' | 'Math' | 'Science' | 'Kiswahili' | 'English & ELA' | 'History & Social Studies' | 'Classroom Management';

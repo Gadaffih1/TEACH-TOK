@@ -10,6 +10,7 @@ import { CreateVideoModal } from './components/CreateVideoModal';
 import { LessonBinderModal } from './components/LessonBinderModal';
 import { RemixModal } from './components/RemixModal';
 import { AboutModal } from './components/AboutModal';
+import { BottomSearchBar } from './components/BottomSearchBar';
 import { useAuth } from './auth/AuthContext';
 
 export const App: React.FC = () => {
@@ -67,10 +68,12 @@ export const App: React.FC = () => {
         const matchConcept = v.concept.toLowerCase().includes(q);
         const matchSubject = v.subject.toLowerCase().includes(q);
         const matchTeacher = v.teacher.name.toLowerCase().includes(q);
+        const matchSchool = v.teacher.school.toLowerCase().includes(q);
+        const matchGrade = v.gradeBand.toLowerCase().includes(q);
         const matchStandard = v.standardCode.toLowerCase().includes(q);
         const matchPedagogy = v.pedagogyTag.toLowerCase().includes(q);
         const matchStrategy = v.teachingStrategy.toLowerCase().includes(q);
-        if (!matchTitle && !matchConcept && !matchSubject && !matchTeacher && !matchStandard && !matchPedagogy && !matchStrategy) {
+        if (!matchTitle && !matchConcept && !matchSubject && !matchTeacher && !matchSchool && !matchGrade && !matchStandard && !matchPedagogy && !matchStrategy) {
           return false;
         }
       }
@@ -196,7 +199,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main App Content: TikTok Video Feed */}
-      <main className="flex-1 pt-32 pb-4 px-2 sm:px-4 flex items-center justify-center">
+      <main className="flex-1 pt-32 pb-24 sm:pb-28 px-2 sm:px-4 flex items-center justify-center">
         <VideoFeed
           videos={filteredVideos}
           currentIndex={safeIndex}
@@ -212,6 +215,22 @@ export const App: React.FC = () => {
           onOpenRemix={(v) => setActiveRemixVideo(v)}
         />
       </main>
+
+      {/* Floating Bottom Topic Search Space & Filter Dock */}
+      <BottomSearchBar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          setCurrentIndex(0);
+        }}
+        totalMatched={filteredVideos.length}
+        selectedSubject={selectedSubject}
+        onSelectSubject={(sub) => {
+          setSelectedSubject(sub);
+          setCurrentIndex(0);
+        }}
+        currentIndex={safeIndex}
+      />
 
       {/* Modals */}
       {activeResourceVideo && (

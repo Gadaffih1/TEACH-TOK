@@ -187,12 +187,13 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
                 onChange={(e) => setSubject(e.target.value as any)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
               >
-                <option value="Math">Math</option>
-                <option value="Science">Science</option>
-                <option value="English & ELA">English & ELA</option>
-                <option value="History & Social Studies">History & Social Studies</option>
-                <option value="Arts">Arts</option>
-                <option value="Classroom Management">Classroom Management</option>
+                <option value="Computer Studies">💻 Computer Studies & ICT</option>
+                <option value="Kiswahili">🇰🇪 Kiswahili Sanifu</option>
+                <option value="Math">📐 Mathematics</option>
+                <option value="Science">🔬 Science (Chem/Bio/Phy)</option>
+                <option value="English & ELA">📚 English & ELA</option>
+                <option value="History & Social Studies">🌍 Social Studies & History</option>
+                <option value="Classroom Management">🎒 CBC Pedagogy & Facilitation</option>
               </select>
             </div>
 
@@ -214,17 +215,17 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Target Grade Band
+                Kenyan Grade Band
               </label>
               <select
                 value={gradeBand}
                 onChange={(e) => setGradeBand(e.target.value as GradeBand)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-indigo-500"
               >
-                <option value="Elementary (K-5)">Elementary (K-5)</option>
-                <option value="Middle School (6-8)">Middle School (6-8)</option>
-                <option value="High School (9-12)">High School (9-12)</option>
-                <option value="Higher Ed">Higher Ed</option>
+                <option value="Lower Primary (Grade 1-3)">Lower Primary (Grade 1-3)</option>
+                <option value="Upper Primary (Grade 4-6)">Upper Primary (Grade 4-6)</option>
+                <option value="Junior School (Grade 7-9)">Junior School (Grade 7-9)</option>
+                <option value="Senior School (Grade 10-12)">Senior School (Grade 10-12)</option>
               </select>
             </div>
           </div>
@@ -232,11 +233,11 @@ export const CreateVideoModal: React.FC<CreateVideoModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Standard Code
+                Curriculum Code
               </label>
               <input
                 type="text"
-                placeholder="e.g. CCSS.MATH.5.NF.B.7"
+                placeholder="e.g. KICD.CBC.COMP.G7 or KCSE.MATH.F3"
                 value={standardCode}
                 onChange={(e) => setStandardCode(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:border-indigo-500"
